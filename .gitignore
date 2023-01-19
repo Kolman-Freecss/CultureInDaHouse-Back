@@ -1,0 +1,13 @@
+.idea
+epcsd-spring-notification/target
+epcsd-spring-notification/*.iml
+epcsd-spring-notification/.settings
+epcsd-spring-notification/.classpath
+epcsd-spring-notification/.factorypath
+epcsd-spring-notification/.project
+epcsd-spring-showcatalog/target
+epcsd-spring-showcatalog/*.iml
+epcsd-spring-showcatalog/.settings
+epcsd-spring-showcatalog/.classpath
+epcsd-spring-showcatalog/.factorypath
+epcsd-spring-showcatalog/.project

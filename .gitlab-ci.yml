@@ -1,0 +1,136 @@
+stages:
+  - build
+  - test
+  - analyze
+  - docker
+  - deploy
+
+variables:
+  ZOOKEEPER_CLIENT_PORT: 2181
+  ZOOKEEPER_TICK_TIME: 2000
+  KAFKA_BROKER_ID: 1
+  KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092, CONNECTIONS_FROM_HOST://kafka:19092
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONNECTIONS_FROM_HOST:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  POSTGRES_USER: epcsd
+  POSTGRES_PASSWORD: epcsd
+  SPRING_POSTGRES_HOST: postgres
+  SPRING_POSTGRES_PORT: 5432
+  SPRING_POSTGRES_DATABASE: epcsd
+  SPRING_POSTGRES_USER: epcsd
+  SPRING_POSTGRES_PASSWORD: epcsd
+  SPRING_KAFKA_HOST: kafka
+  SPRING_KAFKA_PORT: 19092
+  FF_NETWORK_PER_BUILD: 1
+
+build:
+  stage: build
+  image: maven:3.6.3-jdk-11
+  needs: []
+  script:
+    - cd epcsd-spring-showcatalog
+    - mvn clean compile
+    - cd ../epcsd-spring-notification
+    - mvn clean compile
+  artifacts:
+    expire_in: 1h
+    paths:
+      - epcsd-spring-showcatalog/
+      - epcsd-spring-notification/
+  #cache:
+  #  paths:
+  #    - epcsd-spring-showcatalog/
+  #    - epcsd-spring-notification/
+
+test:
+  stage: test
+  needs:
+    - build
+  image: maven:3.6.3-jdk-11
+  services:
+    - name: confluentinc/cp-zookeeper:latest
+      alias: zookeeper
+    - name: confluentinc/cp-kafka:latest
+      alias: kafka
+    - name: postgres
+      alias: db
+  cache:
+    paths:
+      - /root/.m2
+  script:
+    - cd epcsd-spring-showcatalog
+    - mvn clean test -Pcoverage
+    - cd ../epcsd-spring-notification
+    - mvn clean test -Pcoverage
+
+docker-build:
+  stage: docker
+  image: docker:latest
+  only:
+    - main
+  needs:
+    - test
+  services:
+    - docker:dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - cd epcsd-spring-notification/
+    - >-
+      docker build .
+      --target runner
+      --tag $CI_REGISTRY_IMAGE/epcsd-spring-notification:latest
+      --cache-from $CI_REGISTRY_IMAGE/epcsd-spring-notification:latest
+    - docker push $CI_REGISTRY_IMAGE/epcsd-spring-notification:latest
+    - cd ../epcsd-spring-showcatalog/
+    - >-
+      docker build .
+      --target runner
+      --tag $CI_REGISTRY_IMAGE/epcsd-spring-showcatalog:latest
+      --cache-from $CI_REGISTRY_IMAGE/epcsd-spring-showcatalog:latest
+    - docker push $CI_REGISTRY_IMAGE/epcsd-spring-showcatalog:latest
+
+sonarqube-check:
+  stage: analyze
+  image: maven:3.6.3-jdk-11
+  needs: []
+  services:
+    - name: confluentinc/cp-zookeeper:latest
+      alias: zookeeper
+    - name: confluentinc/cp-kafka:latest
+      alias: kafka
+    - name: postgres
+      alias: db
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - cd epcsd-spring-showcatalog
+    - mvn clean test -Pcoverage
+    - mvn sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=PDS-GRUPO7-SHOWCATALOG -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_TOKEN_CATALOG -Pcoverage
+    # -Dsonar.exclusions=src/**
+    - cd ../epcsd-spring-notification
+    - mvn clean test -Pcoverage
+    - mvn sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=PDS-GRUPO7-NOTIFICATION -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_TOKEN_NOTIFICATION -Pcoverage
+    #-Dsonar.exclusions=src/**
+  allow_failure: true
+
+deploy:
+  stage: deploy
+  only:
+    - main
+  image: instrumentisto/rsync-ssh
+  needs:
+    - docker-build
+  before_script:
+    - mkdir -p "${HOME}/.ssh"
+    - echo "${SSH_PRIVATE_KEY}" > "${HOME}/.ssh/id_rsa"
+    - chmod 700 "${HOME}/.ssh/id_rsa"
+  script:
+    - ssh -o "StrictHostKeyChecking no" debian@$DEBIAN_KEY "cd /home/debian/app; docker compose pull; docker compose up -d"
