@@ -1,14 +1,13 @@
 package edu.uoc.epcsd.showcatalog.domain.repository;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import edu.uoc.epcsd.showcatalog.domain.Performance;
 import edu.uoc.epcsd.showcatalog.domain.Show;
 import edu.uoc.epcsd.showcatalog.domain.ShowComment;
 import edu.uoc.epcsd.showcatalog.domain.Status;
-import edu.uoc.epcsd.showcatalog.infrastructure.repository.jpa.CategoryEntity;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
 
 public interface ShowRepository {
 

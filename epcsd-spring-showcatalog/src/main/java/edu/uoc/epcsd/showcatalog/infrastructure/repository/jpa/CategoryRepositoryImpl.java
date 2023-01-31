@@ -38,6 +38,12 @@ public class CategoryRepositoryImpl implements CategoryRepository {
 	}
 
 	@Override
+	public void updateCategory(Category category) {
+		final CategoryEntity categoryEntity = CategoryEntity.fromDomain(category);
+		jpaRepository.save(categoryEntity);
+	}
+
+	@Override
 	public void deleteCategory(Long id) {
 		jpaRepository.deleteById(id);
 	}

@@ -118,4 +118,19 @@ public class CategoryServiceUnitTest {
 		category.setId(categoryId);
 		assertThat(category.getId()).isEqualTo(categoryId);
 	}
+	
+	/**
+	 * Test que actualiza una categoria.
+	 */
+	@Test
+	void update_category() {
+		log.debug("Test: update_category()");
+		
+		final Long categoryId = 75L;
+		final Category categoryMusicShow = Category.builder().id(categoryId).name(MUSIC_SHOWS).description(MUSIC_SHOWS).build();
+		Mockito.when(categoryRepository.findCategoryById(categoryId)).thenReturn(Optional.of(categoryMusicShow));
+
+		boolean success = categoryService.updateCategory(categoryMusicShow);
+		assertThat(success).isTrue();
+	}
 }

@@ -1,9 +1,9 @@
 package edu.uoc.epcsd.showcatalog.domain.service;
 
-import edu.uoc.epcsd.showcatalog.domain.Category;
-
 import java.util.List;
 import java.util.Optional;
+
+import edu.uoc.epcsd.showcatalog.domain.Category;
 
 public interface CategoryService {
     // categories
@@ -15,5 +15,7 @@ public interface CategoryService {
 
     Long createCategory(Category category);
 
+    boolean updateCategory(Category category);
+    
     void deleteCategory(Long id);
 }

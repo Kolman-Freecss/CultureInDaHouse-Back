@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,8 +25,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import edu.uoc.epcsd.showcatalog.application.request.CreateCategoryRequest;
+import edu.uoc.epcsd.showcatalog.application.request.UpdateCategoryRequest;
 import edu.uoc.epcsd.showcatalog.domain.Category;
 import edu.uoc.epcsd.showcatalog.domain.service.CategoryService;
 import edu.uoc.epcsd.showcatalog.infrastructure.repository.jpa.SpringDataCategoryRepository;
@@ -142,5 +145,23 @@ public class CategoryControllerUnitTest {
 		final Long categoryId = 35L;
 
 		mockMvc.perform(delete(REST_CATEGORIES_PATH + "/" + categoryId).contentType(MediaType.APPLICATION_JSON).content("")).andDo(print()).andExpect(status().isOk());
+	}
+
+	/**
+	 * Test que actualiza una categoria.
+	 */
+	@Test
+	void update_category() throws Exception {
+		log.info("Test: update_category()");
+		final Long categoryId = 75L;
+		final Category category = Category.builder().id(categoryId).name(MUSIC_SHOWS).description(MUSIC_SHOWS).build();
+		Mockito.when(categoryService.updateCategory(category)).thenReturn(true);
+
+		final UpdateCategoryRequest updateCategoryRequest = new UpdateCategoryRequest(category.getId(), category.getName(), category.getDescription());
+		final ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		final String categoryJson = mapper.writeValueAsString(updateCategoryRequest);
+
+		mockMvc.perform(put(REST_CATEGORIES_PATH).contentType(MediaType.APPLICATION_JSON).content(categoryJson)).andDo(print()).andExpect(status().isOk());
 	}
 }

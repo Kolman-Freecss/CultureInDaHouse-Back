@@ -1,14 +1,15 @@
 package edu.uoc.epcsd.showcatalog.domain.service;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import edu.uoc.epcsd.showcatalog.domain.Category;
 import edu.uoc.epcsd.showcatalog.domain.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
 
 @Log4j2
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -40,6 +41,23 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.createCategory(category);
     }
 
+    @Override
+	public boolean updateCategory(Category category) {
+    	boolean success = false;
+    	final Optional<Category> optionalCategory = categoryRepository.findCategoryById(category.getId());
+        if(optionalCategory.isPresent()) {        	
+            final Category categoryBBDD = optionalCategory.get();
+            categoryBBDD.setName(category.getName());
+            categoryBBDD.setDescription(category.getDescription());
+            
+            categoryRepository.updateCategory(categoryBBDD);
+            success = true;
+        } else {
+            log.error("No se puede actualizar la categoria ya que no existe la categoria con id: " + category.getId());
+        }
+		return success;
+	}
+    
     @Override
     public void deleteCategory(Long id) {
 

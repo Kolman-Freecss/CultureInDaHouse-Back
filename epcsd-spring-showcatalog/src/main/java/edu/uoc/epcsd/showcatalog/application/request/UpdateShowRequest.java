@@ -7,7 +7,6 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import edu.uoc.epcsd.showcatalog.domain.Show;
 import lombok.Getter;
 import lombok.Setter;
 

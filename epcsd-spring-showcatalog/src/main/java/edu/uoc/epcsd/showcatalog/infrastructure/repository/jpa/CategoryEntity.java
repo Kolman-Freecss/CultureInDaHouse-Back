@@ -40,6 +40,7 @@ public class CategoryEntity implements DomainTranslatable<Category> {
         }
 
         return CategoryEntity.builder()
+        		.id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
                 .build();
